@@ -6,7 +6,12 @@ const colors = require(`colors`);
 const connectDB = require("./config/db");
 const fileupload = require("express-fileupload");
 const cookieParser = require("cookie-parser");
+const rateLimit = require("express-rate-limit");
+const hpp = require("hpp");
 const errorHandler = require("./middleware/error");
+const ExpressMongoSanitize = require("express-mongo-sanitize");
+const helmet = require("helmet");
+const xss = require("xss-clean");
 
 //load ens vars
 dotenv.config({ path: "./config/config.env" });
@@ -36,6 +41,25 @@ if (process.env.NODE_ENV === "development") {
 
 // File uploading
 app.use(fileupload());
+
+// Sanitize data
+app.use(ExpressMongoSanitize());
+
+// Set security header
+app.use(helmet());
+
+// Prevent XSS attack
+app.use(xss());
+
+const limiter = rateLimit({
+  windowMs: 10 * 60 * 1000, //10 mins
+  max: 1,
+});
+
+app.use(limiter);
+
+// Prevent http param po
+app.use(hpp());
 
 //Set static folder
 app.use(express.static(path.join(__dirname, "public")));
